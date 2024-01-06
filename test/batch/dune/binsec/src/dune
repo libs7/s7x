@@ -1,0 +1,44 @@
+(include_subdirs unqualified)
+
+(executable
+ (public_name binsec)
+ (package binsec)
+ (name main)
+ (modules main)
+ (flags
+  (:standard -open Binsec))
+ (libraries binsec sse bbsse dtrace armv7decoder amd64decoder armv8decoder))
+
+(library
+ (public_name binsec)
+ (modules
+  (:standard \ main t_main t_formula t_sequence))
+ (modules_without_implementation
+  loader_sigs
+  loader_types
+  sigs
+  smtlib
+  x86Types)
+ (library_flags
+  (:standard -linkall))
+ (flags
+  (:standard -w -3))
+ (libraries str bigarray ocamlgraph zarith dune-site)
+ (foreign_stubs
+  (language c)
+  (names :standard)))
+
+(generate_sites_module
+ (module runtime)
+ (sites binsec))
+
+(tests
+ (names t_formula t_sequence)
+ (modules t_formula t_sequence)
+ (libraries binsec ounit2 qcheck)
+ (flags
+  (:standard -open Binsec))
+ ; bytecode tests fail to link in nix-shell
+ (modes native)
+ (action
+  (run %{test})))

@@ -1,0 +1,8 @@
+exports_files(glob(["*.scm"]))
+
+filegroup(
+    name = "dune",
+    data = glob(["**/dune"]),
+    visibility = ["//visibility:public"]
+)
+

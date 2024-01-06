@@ -1,0 +1,42 @@
+module(
+    name = "s7x",
+    version = "2.0.0",
+    compatibility_level = 2,
+    bazel_compatibility = [">=6.4.0"]
+)
+
+## bcr:
+bazel_dep(name = "platforms",     version = "0.0.8")
+bazel_dep(name = "bazel_skylib",  version = "1.5.0")
+bazel_dep(name = "rules_cc",      version = "0.0.9")
+
+## obazl:
+bazel_dep(name = "gopt",          version = "10.0.0.bzl.1")
+bazel_dep(name = "liblogc",       version = "2.0.0")
+bazel_dep(name = "libs7",         version = "2.0.0")
+
+## s7 plugins
+bazel_dep(name = "libc_s7",       version = "2.0.0")
+bazel_dep(name = "libm_s7",       version = "2.0.0")
+bazel_dep(name = "cjson_s7",      version = "1.7.16")
+bazel_dep(name = "cwalk_s7",      version = "1.2.7")
+bazel_dep(name = "dune_s7",       version = "2.0.0")
+bazel_dep(name = "obazl_tools_cc", version = "2.0.0")
+bazel_dep(name = "toml_s7",       version = "2.0.0")
+
+bazel_dep(name = "mustachios_s7", version = "2.0.0")
+
+bazel_dep(name = "utf8proc_s7",   version = "2.8.0")
+
+## s7 legacy:
+# bazel_dep(name = "arb_s7",      version = "1.23.0")
+# bazel_dep(name = "gdbm_s7",     version = "1.23.0")
+# bazel_dep(name = "gsl_s7",      version = "2.7.1")
+# bazel_dep(name = "mpc_s7",      version = "1.3.1")
+
+
+bazel_dep(name = "uthash",        version = "3.0.0")
+
+## dev deps
+bazel_dep(name = "unity",         version = "2.5.2.bzl.1",
+          dev_dependency = True)

@@ -1,0 +1,389 @@
+package(default_visibility = ["//visibility:public"])
+
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
+load("//config/cc:CONFIG.bzl",
+     "BASE_COPTS",
+     "BASE_LINKOPTS",
+     "PROFILE",
+     "define_module_version")
+
+# load("//:BUILD.bzl",
+#      "BASE_SRCS", "BASE_DEPS",
+#      "BASE_INCLUDE_PATHS", "BASE_COPTS",
+#      "BASE_DEFINES", "BASE_LINKOPTS",
+#      "S7X_VERSION",
+#      "LIBS7_VERSION",
+#      "LIBLOGC_VERSION",
+#      "CJSON_S7_VERSION", "CJSON_VERSION",
+#      "GOPT_VERSION")
+
+LOCAL_REPO=repository_name()[1:]   # "" or "coswitch~2.0.0" etc
+MODSTR=module_name()            # "coswitch"
+
+SRCS = ["@libs7//lib:libs7.h"]
+DEPS          = [
+    "@gopt//lib:gopt",
+    "@liblogc//lib:logc",
+    # "@libs7//config:hdrs",
+    "@libs7//lib:s7",
+    # "@libs7//lib:utils",
+    # "@cjson_s7//lib:cjson_s7"
+]
+INCLUDE_PATHS = [
+    "-Iconfig",
+    # "-Iexternal/libs7~{}/src".format(LIBS7_VERSION),
+    # "-Iexternal/libs7~{}/config".format(LIBS7_VERSION),
+    # "-Iexternal/liblogc~{}/src".format(LIBLOGC_VERSION),
+
+    # "-Iexternal/cjson~{}/config".format(CJSON_S7_VERSION),
+    # "-Iexternal/cjson~{}/include".format(CJSON_VERSION),
+    # when built within libs7 repo, these are needed:
+    # "-Isrc", "-Ilib"
+]
+COPTS         = BASE_COPTS + INCLUDE_PATHS
+# DEFINES       = BASE_DEFINES
+config_setting(name = "macos_opt",
+               constraint_values = ["@platforms//os:macos"],
+               values = {"compilation_mode": "opt"})
+config_setting(name = "linux_opt",
+               constraint_values = ["@platforms//os:linux"],
+               values = {"compilation_mode": "opt"})
+
+LINKOPTS      = BASE_LINKOPTS + select({
+    # static link with compilation_mode opt requires:
+    # "@platforms//os:macos": [
+    ":macos_opt": [
+        "-Wl,-export_dynamic", # or "-Wl,-exported_symbol,...",
+    ],
+    ":linux_opt": ["-Wl,-rdynamic"], # same as -export_dynamic?
+    "//conditions:default": []
+})
+
+filegroup(
+    name = "scm",
+    data = glob(["*.scm"])
+)
+
+bool_flag(name = "test", build_setting_default = False)
+config_setting(name = "test?",
+               flag_values = {":test": "True"})
+
+################################################################
+cc_binary(
+    name  = "repl",
+    # srcs  = select({
+    #     "//config/repl:archive?": ["repl_static.c"],
+    #     "//conditions:default":  ["repl_dynamic.c"]
+    # })
+    srcs = SRCS + ["repl.c"] + select({
+        # "//config/clibs/link:shared?": [
+        #     # "If a rule's name is in the srcs, then this rule
+        #     # automatically depends on that one. If the named rule's
+        #     # outs are C or C++ source files, they are compiled into
+        #     # this rule; if they are library files, they are linked
+        #     # in."
+        #     "@libc_s7//lib:c_s7_dso",
+        #     # "//lib/libc:c_s7_dso",
+        #     "@cwalk_s7//lib:cwalk_s7_dso",
+        #     # "//lib/libcwalk:cwalk_s7_dso",
+
+        #     # "//lib/libdl:dl_s7_dso",
+        #     # "//lib/libgdbm:gdbm_s7_dso",
+        #     # "//lib/libgsl:gsl_s7_dso",
+        #     # "//lib/libm:m_s7_dso",
+        #     # "//lib/libutf8proc:utf8proc_s7_dso",
+
+        #     "@mustachios_s7//lib:mustachios_s7_dso",
+        #     "@cjson_s7//lib:cjson_s7_dso",
+        #     "@toml_s7//lib:toml_s7_dso"
+        # ],
+        "//conditions:default": []
+    }),
+    deps = DEPS + select({
+        # "//config/clibs/link:archive?": [
+        # ],
+        "//conditions:default": [
+            "@libc_s7//lib:c_s7",
+            "@cwalk_s7//lib:cwalk_s7",
+            # "@utf8proc_s7//lib:utf8proc_s7",
+            "@mustachios_s7//lib:mustachios_s7",
+            "@cjson_s7//lib:cjson_s7",
+            "@toml_s7//lib:toml_s7",
+            "@dune_s7//lib:dune_s7",
+
+            # not yet implemented:
+            # "@libdl//lib:dl_s7",
+            # "@gdbm_s7//lib:gdbm_s7",
+            # "@gsl//lib:gsl_s7",
+            # "@math//lib:m_s7",
+        ],
+    }),
+    data = [
+            # "//test/unit/repl",
+            # "//test/data:json",
+            # "//test/data:scm",
+            # "//test/data:toml",
+        ":repl.scm",
+        # "//scm:srcs",
+        # "//scm/srfi:srcs",
+        # "//scm/s7:srcs",
+    ] + select({
+        ":test?": [
+        #     "//test/repl",
+        #     "//test/unit/libsexp/include/case010:data",
+        #     "//test/unit/libsexp/include/case011:data",
+        #     "//test/unit/libsexp/include/case013:data",
+        #     "//test/unit/libsexp/include/case015:data",
+        #     "//test/unit/libsexp/include/case016:data",
+
+        #     "//test/unit/libsexp/include/case020:data",
+        #     "//test/unit/libsexp/include/case022:data",
+        #     "//test/unit/libsexp/include/case023:data",
+        #     "//test/unit/libsexp/include/case024:data",
+        #     "//test/unit/libsexp/include/case025:data",
+        #     "//test/unit/libsexp/include/case026:data",
+        #     "//test/unit/libsexp/include/case040:data",
+        #     "//test/unit/libsexp/include/case042:data",
+        #     "//test/unit/libsexp/include/case050:data",
+
+        #     "//test/unit/libsexp/readers:data",
+
+            "//test/batch/dune/async_ssl/lib:dune",
+        #     "//test/batch/dune/empty:dune",
+        #     "//test/batch/dune/include/case001:dunefiles",
+        #     "//test/batch/dune/include/case002:dunefiles",
+        #     "//test/batch/dune/mwe:dune",
+        #     "//test/batch/dune/strings:dune",
+        #     "//test/batch/dune/strings/eol:dune",
+
+            # "//test/data:json",
+            # "//test/data:scm",
+            # "//test/data:toml",
+        ],
+        "//conditions:default": []
+    # }) + select({
+    #     "//config/clibs/link:runtime?": [
+    #         "@libc_s7//lib:c_s7_dso",
+    #         # "//lib/libc:c_s7_dso",
+    #         "@cwalk_s7//lib:cwalk_s7_dso",
+    #         # "//lib/libcwalk:cwalk_s7_dso",
+
+    #         # "//lib/libdl:dl_s7_dso",
+    #         # "//lib/libgdbm:gdbm_s7_dso",
+    #         # "//lib/libgsl:gsl_s7_dso",
+    #         # "//lib/libm:m_s7_dso",
+    #         # "//lib/libutf8proc:utf8proc_s7_dso",
+
+    #         "@mustachios_s7//lib:mustachios_s7_dso",
+    #         "@cjson_s7//lib:cjson_s7_dso",
+    #         "@toml_s7//lib:toml_s7_dso"
+    #     ],
+    #     "//conditions:default": []
+    }),
+    copts =  COPTS + [
+        # "-I$(GENDIR)/lib/libc",
+        # "-I$(GENDIR)/external/libs7/lib/libc",
+        # "-Ilib/libjson",
+        # "-Iexternal/libs7/lib/libjson",
+        # "-I$(GENDIR)/lib/libcwalk",
+        # "-I$(GENDIR)/external/libs7/lib/libcwalk",
+        # # "-I$(GENDIR)/lib/libdl",
+        # # "-I$(GENDIR)/external/libs7/lib/libdl",
+        # # "-I$(GENDIR)/lib/libm",
+        # # "-I$(GENDIR)/external/libs7/lib/libm",
+
+        # "-Iexternal/gopt~{}".format(GOPT_VERSION),
+        # "-Iexternal/liblogc~{}/lib".format(LIBLOGC_VERSION),
+    ],
+    linkopts = LINKOPTS,
+    # + select({
+    # #     # "//:bsd": ["-Wl,-export-dynamic"],
+    #     "@platforms//os:linux": [
+    #         # "-ldl",
+    #         # "-Wl,-export-dynamic" # same as -rdynamic?
+    #         # if math_s7 included add -lm
+    #     ],
+    # #     # "//:linux_clang": ["-ldl", "-Wl,-export-dynamic"],
+    #     "//conditions:default": []
+    # }),
+    defines = PROFILE + [
+        "LOCAL_REPO=\\\"{}\\\"".format(
+            repository_name()[1:]
+        )
+    ] + select({
+        ## for realpath
+        "@platforms//os:linux": ["_XOPEN_SOURCE=500"],
+        "//conditions:default": []
+    }),
+    local_defines = define_module_version() + [
+        # "MODSTR=\\\"{}\\\"".format(MODSTR),
+        "LOCAL_REPO=\\\"{}\\\"".format(LOCAL_REPO),
+    ],
+    # local_defines = DEFINES,
+    #     select({
+    #     # "//config/clibs/link:archive?": ["CLIBS_LINK_STATIC"],
+    #     "//config/clibs/link:runtime?": ["CLIBS_LINK_RUNTIME"],
+    #     "//conditions:default":   []
+    # }) + select({
+    #     "//config/host/build:macos?": ["DSO_EXT=\\\".dylib\\\""],
+    #     "//config/host/build:linux?": [
+    #         "DSO_EXT=\\\".so\\\"",
+    #         "_XOPEN_SOURCE=500", # strdup
+    #         "_DEFAULT_SOURCE"    # dirent DT_* macros
+    #     ],
+    #     "//conditions:default":   ["DSO_EXT=\\\".so\\\""]
+    # }) + select({
+    #     "//config/debug:debug?": ["DEVBUILD"],
+    #     "//conditions:default":   []
+    # }) + select({
+    #     "//config/debug:trace?": ["TRACE"],
+    #     "//conditions:default": []
+    # }),
+    visibility = ["//visibility:public"]
+)
+
+##########
+## nrepl depends on notcurses, which is yet another big hairy lib
+
+# deps: libdeflate-dev libncurses-dev libunistring-dev
+
+# libgpm: general purpose mouse GPL v2
+
+# multimedia support: libavformat-dev libavutil-dev libswscale-dev
+# qrcode support:  libqrcodegen-dev
+# other stuff we don't need:  install build-essential cmake doctest-dev pandoc pkg-config
+# GPL: libgpm-dev
+
+cc_binary(
+    name  = "nrepl",
+    srcs  = [
+        "nrepl.c",
+        # "//lib:s7.h"
+        ## conditional:
+        # "nrepl-bits.h",
+    ],
+    deps = [
+        "@notcurses//:notcurses",
+        "@libdeflate//:libdeflate",
+        "@libunistring//:libunistring",
+        "@ncurses//:libncurses",
+        "//lib:c_s7",
+        "//lib:notcurses_s7",
+        "//lib:s7",
+        "//vendored/logc",
+    ],
+    data = [
+        # "external/notcurses/notcurses/lib/libnotcurses-core.a",
+        # "external/notcurses/notcurses/lib/libnotcurses.a",
+        "@notcurses//:notcurses",
+        "//scm:srcs",
+    ],
+    copts = [
+        "-Wall",
+        "-Wextra",
+        # "-Werror=pedantic",
+        "-Wno-unused-parameter",
+        "-Isrc",
+        "-Ivendored/logc",
+        "-Iexternal/vendored/logc",
+
+        "-Iexternal/notcurses/notcurses/include/notcurses",
+    ] + select({
+        "@platforms//os:macos": [
+            "-Wno-format-pedantic",
+            "-Wno-gnu",
+            "-std=c11"
+        ],
+        "@platforms//os:linux": [
+            "-std=gnu11",
+            "-Wno-unused-function",
+            # "--pedantic-errors",
+        ],
+        "//conditions:default": ["-std=c11"],
+    }),
+    defines = PROFILE,
+    local_defines = [
+        "WITH_MAIN",
+        "WITH_NOTCURSES",
+        "WITH_SYSTEM_EXTRAS",
+    ],
+        # "WITH_C_LOADER",
+        # "NREPL_DEVBUILD"
+    # ] + select({
+    #     "//config/nrepl:debug?": ["NREPL_DEVBUILD"],
+    #     "//conditions:default":   []
+    # }) + select({
+    #     "//config/s7:debug?": ["S7_DEVBUILD"],
+    #     "//conditions:default":   []
+    # }),
+    linkopts = LINKOPTS,
+    # [
+    #     # "-lnotcurses",
+    #     # "-ldeflate",
+    #     # "-lunistring",
+    #     # "-lncurses",
+    # ] + select({
+    #     # static link with compilation_mode opt requires:
+    #     # "//:bsd": ["-Wl,-export-dynamic"],
+    #     "@platforms//os:macos": [
+    #         ## FIXME: select on macos + -c opt
+    #         # "-Wl,-export-dynamic", # or -export_dynamic???
+    #         # "-Wl,-exported_symbol,_libc_s7_init,_libmustachios_s7_init,_libcjson_s7_init,_libtoml_s7_init,_libdune_s7_init"
+    #     ],
+    #     "@platforms//os:linux": [
+    #         # "-ldl",
+    #         "-Wl,-rdynamic" # linux
+    #         #? "-Wl,-export-dynamic"
+    #     ],
+    #     # "//:linux_clang": ["-ldl", "-Wl,-export-dynamic"],
+    #     "//conditions:default": []
+    # }),
+    visibility = ["//visibility:public"]
+)
+
+################
+## legacy repl.c
+##########
+## linux: gcc -o repl repl.c s7.o -Wl,-export-dynamic -lm -I. -ldl
+cc_binary(
+    name  = "repl_x",
+    srcs  = ["repl.c"],
+    deps = ["//lib:s7"],
+    copts =  [
+        "-Wall",
+        "-Wextra",
+        # "-Werror=pedantic",
+        # "-pedantic-errors",
+        "-Isrc",
+    ] + select({
+        # "//:bsd": ["-std=c11"],
+        "@platforms//os:macos": ["-std=c11"],
+        "@platforms//os:linux": [
+            "-std=c11",
+            "-Wl,export-dynamic",
+            ],
+        # "//:linux_clang": [
+        #     "-std=c11",
+        #     "-fPIC",
+        #     "-Wl,export-dynamic",
+        #     ],
+        "//conditions:default": ["-std=c11"],
+    }),
+    data = ["//scm:srcs"],
+    linkopts = LINKOPTS,
+    # select({
+    #     # "//:bsd": ["-Wl,-export-dynamic"],
+    #     "@platforms//os:macos": [],
+    #     "@platforms//os:linux": [
+    #         "-ldl", "-Wl,-export-dynamic"
+    #     ],
+    #     # "//:linux_clang": ["-ldl", "-Wl,-export-dynamic"],
+    #     "//conditions:default": []
+    # }) + [
+    #     "-lm",
+    # ],
+    visibility = ["//visibility:public"]
+)
+
+

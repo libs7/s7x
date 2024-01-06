@@ -1,0 +1,25 @@
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("//test/app:BUILD.bzl", "test_mustachios")
+
+TAGS = ["toml"] # "batch", "mustache"]
+
+# test_suite(
+#     name  = "case001",
+#     tests = [":json", "scm", "toml"]
+# )
+
+# diff_test(
+#     name  = "json",
+#     file1 = "colors.expected",
+#     file2 = "json.actual",
+#     timeout = "short",
+#     tags  = TAGS + ["json"]
+# )
+
+test_mustachios(
+    name     = "array",
+    script   = "array_main.scm",
+    out      = "array.actual",
+    data     = "array.toml",
+    template = "array.mustache"
+)

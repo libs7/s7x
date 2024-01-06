@@ -1,0 +1,113 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+# load("//:BUILD.bzl",
+#      "BASE_SRCS", "BASE_DEPS", "BASE_INCLUDE_PATHS",
+#      "BASE_COPTS", "BASE_DEFINES", "BASE_LINKOPTS",
+#      "CWALK_VERSION")
+
+# load("//test:BUILD.bzl",
+#      "TEST_SRCS", "TEST_DEPS", "TEST_INCLUDE_PATHS",
+#      "TEST_COPTS", "TEST_DEFINES", "TEST_LINKOPTS",
+#      "TIMEOUT")
+BASE_SRCS = []
+
+BASE_COPTS = []
+BASE_DEFINES = []
+BASE_LINKOPTS = []
+
+BASE_DEPS = [
+    "@gopt//lib:gopt",
+    "@libc_s7//lib:c_s7",
+    "@mustachios_s7//lib:mustachios_s7",
+    "@cjson_s7//lib:cjson_s7",
+    "@toml_s7//lib:toml_s7",
+    "@dune_s7//lib:dune_s7",
+    # "@libs7//lib:s7",
+    # "@libs7//config:hdrs",
+    "@liblogc//lib:logc"
+]
+BASE_INCLUDE_PATHS = [
+    # "-Iexternal/libs7~{}/config".format(LIBS7_VERSION),
+    # "-Iexternal/libs7~{}/src".format(LIBS7_VERSION),
+    # "-Iexternal/liblogc~{}/src".format(LIBLOGC_VERSION),
+]
+
+SRCS          = BASE_SRCS + select({
+    # "//config/clibs/link:shared?": [
+    #     "//lib/libmustachios:libmustachios7_s7.c"],
+    "//conditions:default": []
+})
+
+INCLUDE_PATHS = BASE_INCLUDE_PATHS + [ #+ TEST_INCLUDE_PATHS + [
+    "-Itest/unit",
+    "-Itest/libmustachios",
+    "-Itest/libmustachios/cjson",
+    "-Itest/libmustachios/toml",
+    "-Ilib/libmustachios",
+    "-Iexternal/libs7/lib/libmustachios",
+]
+
+COPTS         = BASE_COPTS + INCLUDE_PATHS # + TEST_COPTS 
+
+DEPS          = BASE_DEPS + select({  #  + TEST_DEPS
+    # "//config/clibs/link:archive?": [
+    #     # "//vendored/toml",
+    #     "@toml_s7//src:toml_s7",
+    #     # "//lib/libtoml:toml_s7_archive",
+    #     "//lib/libmustachios:mustachios_s7_archive",
+    # ],
+    "//conditions:default": []
+})
+DATA = [
+    # "@mustachios_s7//lib:mustachios_s7",
+    # "@dune_s7//lib:dune_s7",
+    # "@toml_s7//lib:toml_s7",
+    # "//scm:srcs",
+    # "//scm/srfi:srcs",
+    # "//scm/s7:srcs"
+]
+
+DEFINES       = BASE_DEFINES # + TEST_DEFINES
+
+config_setting(name = "linux_opt",
+               constraint_values = ["@platforms//os:linux"],
+               values = {"compilation_mode": "opt"})
+config_setting(name = "macos_opt",
+               constraint_values = ["@platforms//os:macos"],
+               values = {"compilation_mode": "opt"})
+LINKOPTS      = BASE_LINKOPTS + select({
+    # static link with compilation_mode opt requires:
+    ":macos_opt": [
+        "-Wl,-export_dynamic",
+        # "-Wl,-exported_symbol,_libc_s7_init",
+        # "-Wl,-exported_symbol,_libmustachios_s7_init",
+        # "-Wl,-exported_symbol,_libcjson_s7_init",
+        # "-Wl,-exported_symbol,_libdune_s7_init"
+        # "-Wl,-exported_symbol,_libtoml_s7_init",
+    ],
+    ":linux_opt": [
+        "-Wl,-rdynamic" # same as -export_dynamic?
+    ],
+    "//conditions:default": []
+})
+
+################################################################
+cc_binary(
+    name = "mustachios",
+    linkstatic = True,
+    # features = ["fully_static_link"], ## not for macos
+    srcs = SRCS + ["mustachios_test_runner.c"],
+    copts = COPTS + [
+        # "-Iexternal//cwalk~{}/include".format(CWALK_VERSION)
+    ],
+    local_defines = DEFINES,
+    deps = DEPS + ["@cwalk_s7//lib:cwalk_s7"],
+    data = DATA + select({
+        # "//config/clibs/link:runtime?": [
+        #     "//lib/libmustachios:mustachios_s7"
+        # ],
+        "//conditions:default": []
+    }),
+    linkopts = LINKOPTS,
+    visibility = ["//visibility:public"]
+)
